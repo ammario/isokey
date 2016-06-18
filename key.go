@@ -36,7 +36,7 @@ func Validate(digest string) (*Key, error) {
 	key.UserID = binary.BigEndian.Uint32(rawDigest[28:32])
 	key.Flags = binary.BigEndian.Uint32(rawDigest[32:36])
 
-	secret, err := getSecret(key.SecretVersion)
+	secret, err := getSecret(key)
 	if err != nil {
 		return key, err
 	}
@@ -67,7 +67,7 @@ func (key *Key) Digest() (digest string, err error) {
 	binary.Write(message, binary.BigEndian, key.SecretVersion)
 	binary.Write(message, binary.BigEndian, key.UserID)
 	binary.Write(message, binary.BigEndian, key.Flags)
-	secret, err := getSecret(key.SecretVersion)
+	secret, err := getSecret(key)
 	if err != nil {
 		return "", err
 	}

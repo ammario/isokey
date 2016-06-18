@@ -14,9 +14,9 @@ var Secret []byte
 //SecretMap maps secret versions to secrets
 var SecretMap map[uint32][]byte
 
-//GetSecret allows you to dynamically use secrets depending on the provided secret version.
+//GetSecret allows you to dynamically use secrets.
 //Returning nil indicates that no secret was found for the version
-var GetSecret func(secretVersion uint32) (secret []byte)
+var GetSecret func(key *Key) (secret []byte)
 
 //Invalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
 //Invalidate is ran after the key's signature has been validated.
@@ -36,12 +36,12 @@ var (
 	ErrInvalid   = errors.New("Key is expired or invalid.")
 )
 
-func getSecret(secretVersion uint32) (secret []byte, err error) {
+func getSecret(key *Key) (secret []byte, err error) {
 	var ok bool
 	if GetSecret != nil {
-		secret = GetSecret(secretVersion)
+		secret = GetSecret(key)
 	} else if SecretMap != nil {
-		secret, ok = SecretMap[secretVersion]
+		secret, ok = SecretMap[key.SecretVersion]
 		if !ok {
 			return secret, ErrNoSecret
 		}

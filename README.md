@@ -60,8 +60,8 @@ Use a map
 Alternatively get full control with a function
 ```go
 
-    isokey.GetSecret = function(keyversion uint32)(secret []byte){
-        if keyversion == 1 {
+    isokey.GetSecret = function(key *Key)(secret []byte){
+        if key.SecretVersion == 1 {
             return []byte("sec1") 
         }
         return nil
