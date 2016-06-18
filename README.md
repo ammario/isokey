@@ -76,6 +76,7 @@ isokey.Invalidate = function(key *isokey.Key) bool {
 
 ## Key Structure
 All binary values of BigEndian
+
 | Field | Type |
 |--------|------|
 | Signature | [16]byte |
