@@ -12,11 +12,10 @@ the key.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 ## Table Of Contents
 
-- [Isokey](#isokey)
-  - [Basic usage](#basic-usage)
-  - [Using multiple secrets](#using-multiple-secrets)
-  - [Invalidating keys](#invalidating-keys)
-  - [Key Structure](#key-structure)
+- [Basic usage](#basic-usage)
+- [Using multiple secrets](#using-multiple-secrets)
+- [Invalidating keys](#invalidating-keys)
+- [Key Structure](#key-structure)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -25,13 +24,15 @@ the key.
 ```go
     isokey.Secret = []byte("super_secret_symmetric_key")
     key := isokey.Key{
-        User: 1,
+        UserID: 1,
         Expires: time.Now().Add(time.Hour * 24),
     }
     fmt.Printf("Your key is %v", key.Digest())
 ```
 
 ## Using multiple secrets
+The SecretVersion is in included in each key to enable
+implementors to use multiple secrets.
 
 Use a map
 ```go
@@ -55,6 +56,7 @@ Alternatively get full control with a function
 ## Invalidating keys
 
 Invalidating keys can be useful if a client has been compromised
+
 You can invalidate keys like so
 ```go
 isokey.Invalidate = function(key *isokey.Key) bool {
@@ -68,14 +70,14 @@ isokey.Invalidate = function(key *isokey.Key) bool {
     return false
 }
 ```
-**Remeber when overriding Invalidate to handle expired keys**
+**Remember when overriding Invalidate to handle expired keys**
 
 
 
 ## Key Structure
 All binary values of BigEndian
-| Field | Type
---------|------
+| Field | Type |
+|--------|------|
 | Signature | [16]byte
 | Made Time (Unix epoch timestamp) | uint32
 | Expire Time (Unix epoch timestamp) | uint32
