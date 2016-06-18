@@ -78,11 +78,11 @@ isokey.Invalidate = function(key *isokey.Key) bool {
 All binary values of BigEndian
 | Field | Type |
 |--------|------|
-| Signature | [16]byte
-| Made Time (Unix epoch timestamp) | uint32
-| Expire Time (Unix epoch timestamp) | uint32
-| Secret Version | uint32
-| User ID     | uint32
-| Flags | uint32
+| Signature | [16]byte |
+| Made Time (Unix epoch timestamp) | uint32 |
+| Expire Time (Unix epoch timestamp) | uint32 |
+| Secret Version | uint32 |
+| User ID     | uint32 |
+| Flags | uint32 |
 
 Keys are encoded usng Bitcoin's base58 alphabet.
