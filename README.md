@@ -102,3 +102,7 @@ All binary values are big endian.
 | Flags | uint32 |
 
 Keys are encoded usng Bitcoin's base58 alphabet.
+
+It may seem intuitive to put the signature at the end of the digest. It's located
+at the beginning as it makes eyeballing different API more easy due to
+the avalanche effect.
