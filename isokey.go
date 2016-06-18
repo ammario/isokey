@@ -19,7 +19,8 @@ var SecretMap map[uint32][]byte
 var GetSecret func(secretVersion uint32) (secret []byte)
 
 //Invalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
-//This is useful when a client has been compromised
+//Invalidate is ran after the key's signature has been validated.
+//This is useful to deal with cases revolving compromised users.
 var Invalidate = func(key *Key) (invalid bool) {
 	if key.Expires.Before(time.Now()) {
 		return true
