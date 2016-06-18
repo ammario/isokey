@@ -6,7 +6,7 @@ Isokey allows you to make and verify API keys without a database connection via 
 - Important information such as userID, key expire time, and flags are stored within
 the key.
 - Use mutliple secrets simultaneously
-- Invalid secrets and compromised keys
+- Invalidate secrets and compromised keys
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
