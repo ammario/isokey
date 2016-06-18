@@ -17,7 +17,7 @@ the key.
   - [Validating a key](#validating-a-key)
   - [Using multiple secrets](#using-multiple-secrets)
   - [Invalidating keys](#invalidating-keys)
-- [Key Structure](#key-structure)
+- [Digest Structure](#digest-structure)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -89,7 +89,7 @@ isokey.Invalidate = function(key *isokey.Key) bool {
 
 
 
-# Key Structure
+# Digest Structure
 All binary values are big endian.
 
 | Field | Type |
@@ -101,7 +101,7 @@ All binary values are big endian.
 | User ID     | uint32 |
 | Flags | uint32 |
 
-Keys are encoded usng Bitcoin's base58 alphabet.
+Digests are encoded with Bitcoin's base58 alphabet.
 
 It may seem intuitive to put the signature at the end of the digest. It's located
 at the beginning as it makes eyeballing different API more easy due to
