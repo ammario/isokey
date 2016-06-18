@@ -21,7 +21,7 @@ type Key struct {
 	Flags         uint32
 }
 
-//Validate securely validates a digest or API
+//Validate securely validates a digest or API.
 //If Invalidate is not set with a custom handler, expired keys will invoke an error.
 func Validate(digest string) (*Key, error) {
 	key := &Key{}
@@ -52,9 +52,9 @@ func Validate(digest string) (*Key, error) {
 	return key, nil
 }
 
-//Digest converts the key into it's base58 form
-//An error will only be returned if the secret cannot be found from SecretVersion
-//if key.Made is zero it is set to the current time
+//Digest converts the key into it's base58 form.
+//An error will only be returned if the secret cannot be found from SecretVersion.
+//if key.Made is zero it is set to the current time.
 func (key *Key) Digest() (digest string, err error) {
 	message := &bytes.Buffer{}
 

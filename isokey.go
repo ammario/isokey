@@ -1,4 +1,5 @@
 //Package isokey allows you to make and verify API keys without a database connection via HMAC signatures.
+//The keys are scalable and persistent. All information is stored in the key, and with the client.
 package isokey
 
 import (
@@ -13,11 +14,11 @@ var Secret []byte
 //SecretMap maps secret versions to secrets
 var SecretMap map[uint32][]byte
 
-//GetSecret allows you to dynamically use secrets depending on the provided secret version
+//GetSecret allows you to dynamically use secrets depending on the provided secret version.
 //Returning nil indicates that no secret was found for the version
 var GetSecret func(secretVersion uint32) (secret []byte)
 
-//Invalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made)
+//Invalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
 //This is useful when a client has been compromised
 var Invalidate = func(key *Key) (invalid bool) {
 	if key.Expires.Before(time.Now()) {
