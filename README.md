@@ -1,6 +1,6 @@
 # Isokey
 
-Isokey allows you to make and verify API keys without a database connection via HMAC signatures.
+Isokey allows you to make and verify self-contained API keys without a database via HMAC signatures.
 
 ## Features
 - Important information such as userID, key expire time, and flags are stored within
@@ -70,7 +70,8 @@ Alternatively get full control with a function
 
 ## Invalidating keys
 
-Invalidating keys can be useful if a client has been compromised
+Custom invalidation can be useful if you'd like to support cases where the client
+has been compromised.
 
 You can invalidate keys like so
 ```go
