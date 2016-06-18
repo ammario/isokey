@@ -104,5 +104,5 @@ All binary values are big endian.
 Digests are encoded with Bitcoin's base58 alphabet.
 
 It may seem intuitive to put the signature at the end of the digest. It's located
-at the beginning as it makes eyeballing different API more easy due to
+at the beginning as it makes eyeballing different keys more easy due to
 the avalanche effect.
