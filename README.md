@@ -13,13 +13,17 @@ the key.
 ## Table Of Contents
 
 - [Basic usage](#basic-usage)
-- [Using multiple secrets](#using-multiple-secrets)
-- [Invalidating keys](#invalidating-keys)
+  - [Creating a key](#creating-a-key)
+  - [Validating a key](#validating-a-key)
+  - [Using multiple secrets](#using-multiple-secrets)
+  - [Invalidating keys](#invalidating-keys)
 - [Key Structure](#key-structure)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Basic usage
+# Basic usage
+
+## Creating a key
 
 ```go
     isokey.Secret = []byte("super_secret_symmetric_key")
@@ -28,6 +32,17 @@ the key.
         Expires: time.Now().Add(time.Hour * 24),
     }
     fmt.Printf("Your key is %v", key.Digest())
+```
+
+## Validating a key
+
+```go
+	key, err = isokey.Validate(digest)
+	if err != nil {
+		return err
+	}
+    //Key secure here
+    fmt.Printf("%v", key.Made)
 ```
 
 ## Using multiple secrets
@@ -74,7 +89,7 @@ isokey.Invalidate = function(key *isokey.Key) bool {
 
 
 
-## Key Structure
+# Key Structure
 All binary values are big endian.
 
 | Field | Type |
