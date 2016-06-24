@@ -12,6 +12,7 @@ the key.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 ## Table Of Contents
 
+- [Install](#install)
 - [Basic usage](#basic-usage)
   - [Creating a key](#creating-a-key)
   - [Validating a key](#validating-a-key)
@@ -20,6 +21,9 @@ the key.
 - [Digest Structure](#digest-structure)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+# Install
+`go get gopkg.in/ammario/isokey.v1`
 
 # Basic usage
 
