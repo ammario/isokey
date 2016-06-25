@@ -24,7 +24,7 @@ func TestSymKeyDigest(t *testing.T) {
 	}
 	fmt.Printf("Digest is %v\n", digest)
 
-	key, err = ks.Validate(digest)
+	key, err = ks.Verify(digest)
 
 	if err != nil {
 		t.Errorf("Error reading digest: %v", err)

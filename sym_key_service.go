@@ -12,7 +12,7 @@ import (
 	"github.com/jbenet/go-base58"
 )
 
-const symKeySize = 16 + 4 + 4 + 4 + 4 + 4
+const symKeyDigestSize = 16 + 4 + 4 + 4 + 4 + 4
 
 //SymKeyService facilitates the creation and verification of symmetricly signed (HMAC) keys
 type SymKeyService struct {
@@ -59,20 +59,17 @@ func (ks *SymKeyService) getSecret(key *Key) (secret []byte, err error) {
 	return
 }
 
-//Validate securely validates a digest or API.
+//Verify securely validates a digest or API.
 //If Invalidate is not set with a custom handler, expired keys will invoke an error.
-func (ks *SymKeyService) Validate(digest string) (*Key, error) {
+func (ks *SymKeyService) Verify(digest string) (*Key, error) {
 	key := &Key{}
 	rawDigest := base58.Decode(digest)
-	if len(rawDigest) != symKeySize {
+	if len(rawDigest) != symKeyDigestSize {
 		return key, ErrSymKeySize
 	}
 	signature := rawDigest[:16]
-	key.Made = time.Unix(int64(binary.BigEndian.Uint32(rawDigest[16:20])), 0)
-	key.Expires = time.Unix(int64(binary.BigEndian.Uint32(rawDigest[20:24])), 0)
-	key.SecretVersion = binary.BigEndian.Uint32(rawDigest[24:28])
-	key.UserID = binary.BigEndian.Uint32(rawDigest[28:32])
-	key.Flags = binary.BigEndian.Uint32(rawDigest[32:36])
+
+	key = unpack(rawDigest[16:])
 
 	secret, err := ks.getSecret(key)
 	if err != nil {
