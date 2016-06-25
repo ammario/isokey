@@ -23,39 +23,56 @@ the key.
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Install
+Always use gopkg to install, the repository may be in a broken midway state.
 `go get gopkg.in/ammario/isokey.v1`
 
 # Basic usage
 
-## Creating a key
+## Symmetric Keys
 
+### Make a key service
 ```go
-    isokey.Secret = []byte("super_secret_symmetric_key")
-    key := isokey.Key{
-        UserID: 1,
-        Expires: time.Now().Add(time.Hour * 24),
-    }
-    fmt.Printf("Your key is %v", key.Digest())
-```
-
-## Validating a key
-
-```go
-	key, err = isokey.Validate(digest)
-	if err != nil {
-		return err
+    ks := SymKeyService{
+		Secret: []byte("super_secure111"),
 	}
-    //Key secure here
-    fmt.Printf("%v", key.Made)
 ```
 
-## Using multiple secrets
+### Make key digest
+```go
+	key := &Key{
+		UserID:  1,
+		Expires: time.Now().AddDate(0, 1, 0),
+	}
+
+	digest, err := ks.Digest(key)
+
+	if err != nil {
+		t.Errorf("Error making digest: %v", err)
+		return
+	}
+	fmt.Printf("Digest is %v\n", digest)
+```
+
+### Validate key
+
+```go
+    key, err = ks.Validate(digest)
+
+	if err != nil {
+		t.Errorf("Error reading digest: %v", err)
+		return
+	}
+    //Key authenticated
+	fmt.Printf("Key: %+v\n", key)
+```
+
+### Using multiple secrets
 The SecretVersion is in included in each key to enable
 implementors to use multiple secrets.
 
 Use a map
 ```go
-    isokey.SecretMap = map[uint32][]byte{
+    ks.SecretMap = map[uint32][]byte{
         1: []byte("sec1"),
         2: []byte("sec2"),
     }
@@ -63,8 +80,7 @@ Use a map
 
 Alternatively get full control with a function
 ```go
-
-    isokey.GetSecret = function(key *Key)(secret []byte){
+    ks.GetSecret = function(key *Key)(secret []byte){
         if key.SecretVersion == 1 {
             return []byte("sec1") 
         }
@@ -79,7 +95,7 @@ has been compromised.
 
 You can invalidate keys like so
 ```go
-isokey.Invalidate = function(key *isokey.Key) bool {
+ks.CustomInvalidate = function(key *isokey.Key) bool {
     if key.UserID == 10 && key.Made.Before(time.Date(2015, time.November, 10, 23, 0, 0, 0, time.UTC)) {
         return true
     }

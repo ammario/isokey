@@ -6,19 +6,26 @@ import (
 	"time"
 )
 
-func TestKeyDigest(t *testing.T) {
-	Secret = []byte("testing1")
+func TestSymKeyDigest(t *testing.T) {
+	ks := SymKeyService{
+		Secret: []byte("super_secure111"),
+	}
+
 	key := &Key{
 		UserID:  1,
 		Expires: time.Now().AddDate(0, 1, 0),
 	}
-	digest, err := key.Digest()
+
+	digest, err := ks.Digest(key)
+
 	if err != nil {
 		t.Errorf("Error making digest: %v", err)
 		return
 	}
 	fmt.Printf("Digest is %v\n", digest)
-	key, err = Validate(digest)
+
+	key, err = ks.Validate(digest)
+
 	if err != nil {
 		t.Errorf("Error reading digest: %v", err)
 		return
