@@ -32,7 +32,7 @@ the key.
 # Install
 Always use gopkg to install, the repository may be in a broken midway state.
 
-`go get gopkg.in/ammario/isokey.v1`
+`go get gopkg.in/ammario/isokey.v2`
 
 # Symmetric Keys
 
