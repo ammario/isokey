@@ -14,9 +14,11 @@ the key.
 
 - [Install](#install)
 - [Basic usage](#basic-usage)
-  - [Creating a key](#creating-a-key)
-  - [Validating a key](#validating-a-key)
-  - [Using multiple secrets](#using-multiple-secrets)
+  - [Symmetric Keys](#symmetric-keys)
+    - [Make a key service](#make-a-key-service)
+    - [Make key digest](#make-key-digest)
+    - [Validate key](#validate-key)
+    - [Using multiple secrets](#using-multiple-secrets)
   - [Invalidating keys](#invalidating-keys)
 - [Digest Structure](#digest-structure)
 
