@@ -159,7 +159,7 @@ Make your public key
 
 ## Using multiple keys
 Similar to symmetric keys, you can use multiple public
-or private keys. Refer to the godoc for specifc usage.
+or private keys. Refer to the godoc for specific usage.
 
 
 ## Digest Structure
