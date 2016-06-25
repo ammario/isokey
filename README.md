@@ -13,33 +13,31 @@ the key.
 ## Table Of Contents
 
 - [Install](#install)
-- [Basic usage](#basic-usage)
-  - [Symmetric Keys](#symmetric-keys)
-    - [Make a key service](#make-a-key-service)
-    - [Make key digest](#make-key-digest)
-    - [Validate key](#validate-key)
-    - [Using multiple secrets](#using-multiple-secrets)
-  - [Invalidating keys](#invalidating-keys)
-- [Digest Structure](#digest-structure)
+- [Symmetric Keys](#symmetric-keys)
+  - [Make a key service](#make-a-key-service)
+  - [Make key digest](#make-key-digest)
+  - [Validate key](#validate-key)
+  - [Using multiple secrets](#using-multiple-secrets)
+  - [Digest Structure](#digest-structure)
+- [Invalidating keys](#invalidating-keys)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Install
 Always use gopkg to install, the repository may be in a broken midway state.
+
 `go get gopkg.in/ammario/isokey.v1`
 
-# Basic usage
+# Symmetric Keys
 
-## Symmetric Keys
-
-### Make a key service
+## Make a key service
 ```go
     ks := SymKeyService{
 		Secret: []byte("super_secure111"),
 	}
 ```
 
-### Make key digest
+##  Make key digest
 ```go
 	key := &Key{
 		UserID:  1,
@@ -55,7 +53,7 @@ Always use gopkg to install, the repository may be in a broken midway state.
 	fmt.Printf("Digest is %v\n", digest)
 ```
 
-### Validate key
+## Validate key
 
 ```go
     key, err = ks.Validate(digest)
@@ -68,7 +66,7 @@ Always use gopkg to install, the repository may be in a broken midway state.
 	fmt.Printf("Key: %+v\n", key)
 ```
 
-### Using multiple secrets
+## Using multiple secrets
 The SecretVersion is in included in each key to enable
 implementors to use multiple secrets.
 
@@ -90,7 +88,27 @@ Alternatively get full control with a function
     }
 ```
 
-## Invalidating keys
+
+
+## Digest Structure
+All binary values are big endian.
+
+| Field | Type |
+|--------|------|
+| Signature | [16]byte |
+| Made Time (Unix epoch timestamp) | uint32 |
+| Expire Time (Unix epoch timestamp) | uint32 |
+| Secret Version | uint32 |
+| User ID     | uint32 |
+| Flags | uint32 |
+
+Digests are encoded with Bitcoin's base58 alphabet.
+
+It may seem intuitive to put the signature at the end of the digest. It's located
+at the beginning as it makes eyeballing different keys more easy due to
+the avalanche effect.
+
+# Invalidating keys
 
 Custom invalidation can be useful if you'd like to support cases where the client
 has been compromised.
@@ -109,23 +127,3 @@ ks.CustomInvalidate = function(key *isokey.Key) bool {
 }
 ```
 **Remember when overriding Invalidate to handle expired keys**
-
-
-
-# Digest Structure
-All binary values are big endian.
-
-| Field | Type |
-|--------|------|
-| Signature | [16]byte |
-| Made Time (Unix epoch timestamp) | uint32 |
-| Expire Time (Unix epoch timestamp) | uint32 |
-| Secret Version | uint32 |
-| User ID     | uint32 |
-| Flags | uint32 |
-
-Digests are encoded with Bitcoin's base58 alphabet.
-
-It may seem intuitive to put the signature at the end of the digest. It's located
-at the beginning as it makes eyeballing different keys more easy due to
-the avalanche effect.
