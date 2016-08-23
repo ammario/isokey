@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Isokey by ammario</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Isokey</h1>
+        <h2>Self-contained API keys via cryptographic signatures</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/ammario/isokey/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/ammario/isokey/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/ammario/isokey" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a id="isokey" class="anchor" href="#isokey" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Isokey</h1>
+
+<p>Isokey allows you to make and verify self-contained API keys without a database via HMAC signatures.</p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Important information such as userID, key expire time, and flags are stored within
+the key.</li>
+<li>Use mutliple secrets simultaneously</li>
+<li>Invalidate secrets and compromised keys</li>
+</ul>
+
+
+
+
+
+<h2>
+<a id="table-of-contents" class="anchor" href="#table-of-contents" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Table Of Contents</h2>
+
+<ul>
+<li><a href="#install">Install</a></li>
+<li>
+<a href="#symmetric-keys">Symmetric Keys</a>
+
+<ul>
+<li><a href="#make-a-key-service">Make a key service</a></li>
+<li><a href="#make-key-digest">Make key digest</a></li>
+<li><a href="#verify-key">Verify key</a></li>
+<li><a href="#using-multiple-secrets">Using multiple secrets</a></li>
+<li><a href="#digest-structure">Digest Structure</a></li>
+</ul>
+</li>
+<li>
+<a href="#asymmetric-keys">Asymmetric Keys</a>
+
+<ul>
+<li><a href="#make-a-key-pair">Make a key pair</a></li>
+<li><a href="#make-key-digest-1">Make key digest</a></li>
+<li><a href="#verify-key-1">Verify key</a></li>
+<li><a href="#using-multiple-keys">Using multiple keys</a></li>
+<li><a href="#digest-structure-1">Digest Structure</a></li>
+</ul>
+</li>
+<li><a href="#invalidating-keys">Invalidating keys</a></li>
+</ul>
+
+
+
+<h1>
+<a id="install" class="anchor" href="#install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install</h1>
+
+<p>Always use gopkg to install, the repository may be in a broken midway state.</p>
+
+<p><code>go get gopkg.in/ammario/isokey.v2</code></p>
+
+<h1>
+<a id="symmetric-keys" class="anchor" href="#symmetric-keys" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Symmetric Keys</h1>
+
+<h2>
+<a id="make-a-key-service" class="anchor" href="#make-a-key-service" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Make a key service</h2>
+
+<div class="highlight highlight-source-go"><pre>    <span class="pl-smi">ks</span> <span class="pl-k">:=</span> <span class="pl-v">SymKeyService</span>{
+        <span class="pl-v">Secret</span>: []<span class="pl-k">byte</span>(<span class="pl-s"><span class="pl-pds">"</span>super_secure111<span class="pl-pds">"</span></span>),
+    }</pre></div>
+
+<h2>
+<a id="make-key-digest" class="anchor" href="#make-key-digest" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Make key digest</h2>
+
+<div class="highlight highlight-source-go"><pre>    <span class="pl-smi">key</span> <span class="pl-k">:=</span> &amp;Key{
+        <span class="pl-v">UserID</span>:  <span class="pl-c1">1</span>,
+        <span class="pl-v">Expires</span>: time.<span class="pl-c1">Now</span>().<span class="pl-c1">AddDate</span>(<span class="pl-c1">0</span>, <span class="pl-c1">1</span>, <span class="pl-c1">0</span>),
+    }
+
+    <span class="pl-smi">digest</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> ks.<span class="pl-c1">Digest</span>(key)
+
+    <span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+        log.<span class="pl-c1">Fatalf</span>(<span class="pl-s"><span class="pl-pds">"</span>Error making digest: <span class="pl-c1">%v</span><span class="pl-pds">"</span></span>, err)
+    }
+    fmt.<span class="pl-c1">Printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Digest is <span class="pl-c1">%v</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, digest)</pre></div>
+
+<h2>
+<a id="verify-key" class="anchor" href="#verify-key" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Verify key</h2>
+
+<div class="highlight highlight-source-go"><pre>    key, err = ks.<span class="pl-c1">Verify</span>(digest)
+
+    <span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+        log.<span class="pl-c1">Fatalf</span>(<span class="pl-s"><span class="pl-pds">"</span>Error reading digest: <span class="pl-c1">%v</span><span class="pl-pds">"</span></span>, err)
+    }
+    <span class="pl-c">//Key authenticated</span>
+    fmt.<span class="pl-c1">Printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Key: <span class="pl-c1">%+v</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, key)</pre></div>
+
+<h2>
+<a id="using-multiple-secrets" class="anchor" href="#using-multiple-secrets" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using multiple secrets</h2>
+
+<p>The SecretVersion is in included in each key to enable
+implementors to use multiple secrets.</p>
+
+<p>Use a map</p>
+
+<div class="highlight highlight-source-go"><pre>    ks.<span class="pl-smi">SecretMap</span> = <span class="pl-k">map</span>[<span class="pl-k">uint32</span>][]<span class="pl-k">byte</span>{
+        <span class="pl-c1">1</span>: []<span class="pl-k">byte</span>(<span class="pl-s"><span class="pl-pds">"</span>sec1<span class="pl-pds">"</span></span>),
+        <span class="pl-c1">2</span>: []<span class="pl-k">byte</span>(<span class="pl-s"><span class="pl-pds">"</span>sec2<span class="pl-pds">"</span></span>),
+    }</pre></div>
+
+<p>Alternatively get full control with a function</p>
+
+<div class="highlight highlight-source-go"><pre>    ks.<span class="pl-smi">GetSecret</span> = <span class="pl-c1">function</span>(key *Key)(secret []<span class="pl-k">byte</span>){
+        <span class="pl-k">if</span> key.<span class="pl-smi">SecretVersion</span> == <span class="pl-c1">1</span> {
+            <span class="pl-k">return</span> []<span class="pl-k">byte</span>(<span class="pl-s"><span class="pl-pds">"</span>sec1<span class="pl-pds">"</span></span>) 
+        }
+        <span class="pl-k">return</span> <span class="pl-c1">nil</span>
+    }</pre></div>
+
+<h2>
+<a id="digest-structure" class="anchor" href="#digest-structure" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Digest Structure</h2>
+
+<p>All binary values are big endian.</p>
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Signature</td>
+<td>[16]byte</td>
+</tr>
+<tr>
+<td>Made Time (Unix epoch timestamp)</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>Expire Time (Unix epoch timestamp)</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>Secret Version</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>User ID</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>Flags</td>
+<td>uint32</td>
+</tr>
+</tbody>
+</table>
+
+<p>Digests are encoded with Bitcoin's base58 alphabet.</p>
+
+<p>It may seem intuitive to put the signature at the end of the digest. It's located
+at the beginning as it makes eyeballing different keys more easy due to
+the avalanche effect.</p>
+
+<h1>
+<a id="asymmetric-keys" class="anchor" href="#asymmetric-keys" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Asymmetric Keys</h1>
+
+<h2>
+<a id="make-a-key-pair" class="anchor" href="#make-a-key-pair" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Make a key pair</h2>
+
+<p>Make your private key 
+<code>openssl ecparam -genkey -name prime256v1 -outform DER -noout -out privatekey.der</code></p>
+
+<p>Make your public key
+<code>openssl ec -in privatekey.der -inform DER -outform DER -pubout -out publickey.der</code></p>
+
+<h2>
+<a id="make-key-digest-1" class="anchor" href="#make-key-digest-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Make key digest</h2>
+
+<div class="highlight highlight-source-go"><pre>    privKey, _ = isokey.<span class="pl-c1">LoadPrivateKey</span>(<span class="pl-s"><span class="pl-pds">"</span>priv.key<span class="pl-pds">"</span></span>)
+
+    <span class="pl-smi">ks</span> <span class="pl-k">:=</span> <span class="pl-v">AsymKeySigner</span>{
+        <span class="pl-v">PrivateKey</span>: privKey,
+    }
+
+    <span class="pl-smi">key</span> <span class="pl-k">:=</span> &amp;Key{
+        <span class="pl-v">User</span>: <span class="pl-c1">1</span>,
+        <span class="pl-v">Expires</span>: time.<span class="pl-c1">Now</span>().<span class="pl-c1">Add</span>(time.<span class="pl-smi">Hour</span>)
+    }
+
+    <span class="pl-smi">digest</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> ks.<span class="pl-c1">Digest</span>(key)
+
+    fmt.<span class="pl-c1">Printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Digest: <span class="pl-c1">%v</span><span class="pl-pds">"</span></span>, digest)</pre></div>
+
+<h2>
+<a id="verify-key-1" class="anchor" href="#verify-key-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Verify key</h2>
+
+<div class="highlight highlight-source-go"><pre>    pubKey, _ = isokey.<span class="pl-c1">LoadPublicKey</span>(<span class="pl-s"><span class="pl-pds">"</span>pub.key<span class="pl-pds">"</span></span>)
+
+    <span class="pl-smi">kv</span> <span class="pl-k">:=</span> <span class="pl-v">AsymKeyVerifier</span>{
+        <span class="pl-v">PublicKey</span>: pubKey,
+    }
+
+    <span class="pl-smi">key</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> kv.<span class="pl-c1">Verify</span>(digest)
+    <span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+        log.<span class="pl-c1">Fatalf</span>(<span class="pl-s"><span class="pl-pds">"</span>Error verifying key: <span class="pl-c1">%v</span><span class="pl-pds">"</span></span>, err)
+    }
+    fmt.<span class="pl-c1">Printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Key verified <span class="pl-c1">%v</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, key)
+</pre></div>
+
+<h2>
+<a id="using-multiple-keys" class="anchor" href="#using-multiple-keys" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using multiple keys</h2>
+
+<p>Similar to symmetric keys, you can use multiple public
+or private keys. Refer to the godoc for specific usage.</p>
+
+<h2>
+<a id="digest-structure-1" class="anchor" href="#digest-structure-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Digest Structure</h2>
+
+<p>All binary values are big endian.</p>
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R len</td>
+<td>uint8</td>
+</tr>
+<tr>
+<td>R</td>
+<td>[]byte</td>
+</tr>
+<tr>
+<td>S Len</td>
+<td>uint8</td>
+</tr>
+<tr>
+<td>S</td>
+<td>[]byte</td>
+</tr>
+<tr>
+<td>Made Time (Unix epoch timestamp)</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>Expire Time (Unix epoch timestamp)</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>Secret Version</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>User ID</td>
+<td>uint32</td>
+</tr>
+<tr>
+<td>Flags</td>
+<td>uint32</td>
+</tr>
+</tbody>
+</table>
+
+<p>Digests are encoded with Bitcoin's base58 alphabet.</p>
+
+<h1>
+<a id="invalidating-keys" class="anchor" href="#invalidating-keys" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Invalidating keys</h1>
+
+<p>Custom invalidation can be useful if you'd like to support cases where the client
+has been compromised.</p>
+
+<p>You can invalidate keys like so</p>
+
+<div class="highlight highlight-source-go"><pre>ks.<span class="pl-smi">CustomInvalidate</span> = <span class="pl-c1">function</span>(key *isokey.<span class="pl-smi">Key</span>) <span class="pl-k">bool</span> {
+    <span class="pl-k">if</span> key.<span class="pl-smi">UserID</span> == <span class="pl-c1">10</span> &amp;&amp; key.<span class="pl-smi">Made</span>.<span class="pl-c1">Before</span>(time.<span class="pl-c1">Date</span>(<span class="pl-c1">2015</span>, time.<span class="pl-smi">November</span>, <span class="pl-c1">10</span>, <span class="pl-c1">23</span>, <span class="pl-c1">0</span>, <span class="pl-c1">0</span>, <span class="pl-c1">0</span>, time.<span class="pl-smi">UTC</span>)) {
+        <span class="pl-k">return</span> <span class="pl-c1">true</span>
+    }
+    <span class="pl-c">//Make sure to handle expired keys when overriding</span>
+    <span class="pl-k">if</span> key.<span class="pl-smi">Expires</span>.<span class="pl-c1">Before</span>(time.<span class="pl-c1">Now</span>()) {
+        <span class="pl-k">return</span> <span class="pl-c1">true</span>
+    }
+    <span class="pl-k">return</span> <span class="pl-c1">false</span>
+}</pre></div>
+
+<p><strong>Remember when overriding Invalidate to handle expired keys</strong></p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
