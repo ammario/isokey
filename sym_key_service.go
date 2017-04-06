@@ -14,55 +14,41 @@ import (
 
 const symKeyDigestSize = 16 + 4 + 4 + 4 + 4 + 4
 
+var _ = Signer(new(SymKeyService))
+var _ = Verifier(new(SymKeyService))
+
 //SymKeyService facilitates the creation and verification of symmetricly signed (HMAC) keys
 type SymKeyService struct {
-	//Secret is used if GetSecret and SecretMap is nil
-	Secret []byte
-
-	//SecretMap maps secret versions to secrets
-	SecretMap map[uint32][]byte
-
 	//GetSecret allows you to dynamically use secrets.
-	//Returning nil indicates that no secret was found for the version
+	//Returning nil indicates that no secret was found for the key
 	GetSecret func(key *Key) (secret []byte)
 
-	//CustomInvalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
+	//CustomInvalidate allows you to dynamically invalidate a key.
 	//CustomInvalidate is ran after the key's signature has been validated.
-	//This is useful to deal with cases revolving compromised users.
 	CustomInvalidate func(*Key) bool
 }
 
-//Invalidate invalidates a key
-func (ks *SymKeyService) Invalidate(key *Key) bool {
+//NewSymKeyService returns a new sym key service using a single key
+func NewSymKeyService(secret []byte) *SymKeyService {
+	return &SymKeyService{
+		GetSecret: func(key *Key) []byte {
+			return secret
+		},
+	}
+}
+
+//Invalid returns true if the key is invalid
+func (ks *SymKeyService) Invalid(key *Key) bool {
 	if ks.CustomInvalidate == nil {
 		return defaultInvalidate(key)
 	}
 	return ks.CustomInvalidate(key)
 }
 
-func (ks *SymKeyService) getSecret(key *Key) (secret []byte, err error) {
-	var ok bool
-	if ks.GetSecret != nil {
-		secret = ks.GetSecret(key)
-	} else if ks.SecretMap != nil {
-		secret, ok = ks.SecretMap[key.SecretVersion]
-		if !ok {
-			return secret, ErrNoSecret
-		}
-	} else {
-		secret = ks.Secret
-	}
-
-	if secret == nil {
-		return secret, ErrNoSecret
-	}
-	return
-}
-
-//Verify securely validates a digest or API.
-//If Invalidate is not set with a custom handler, expired keys will invoke an error.
+//Verify securely validates a digest.
 func (ks *SymKeyService) Verify(digest string) (*Key, error) {
 	key := &Key{}
+
 	rawDigest := base58.Decode(digest)
 	if len(rawDigest) != symKeyDigestSize {
 		return key, ErrSymKeySize
@@ -71,44 +57,47 @@ func (ks *SymKeyService) Verify(digest string) (*Key, error) {
 
 	key = unpack(rawDigest[16:])
 
-	secret, err := ks.getSecret(key)
-	if err != nil {
-		return key, err
+	secret := ks.GetSecret(key)
+	if secret == nil {
+		return nil, ErrNoSecret
 	}
 
 	if !checkMAC(rawDigest[16:], signature, secret) {
 		return key, ErrBadSecret
 	}
 
-	if ks.Invalidate(key) {
+	if ks.Invalid(key) {
 		return key, ErrInvalid
 	}
 
 	return key, nil
 }
 
-//Digest converts the key into it's base58 form.
-//An error will only be returned if the secret cannot be found from SecretVersion.
-//if key.Made is zero it is set to the current time.
-func (ks *SymKeyService) Digest(key *Key) (digest string, err error) {
+//Sign converts the key into it's base58 form.
+//the only error that will be returned is ErrNoSecret.
+//if key.MadeAt is zero it is set to the current time.
+func (ks *SymKeyService) Sign(key *Key) (digest string, err error) {
 	message := &bytes.Buffer{}
 
-	if key.Made.IsZero() {
-		key.Made = time.Now()
+	if key.MadeAt.IsZero() {
+		key.MadeAt = time.Now()
 	}
-	binary.Write(message, binary.BigEndian, int32(key.Made.Unix()))
-	binary.Write(message, binary.BigEndian, int32(key.Expires.Unix()))
+
+	binary.Write(message, binary.BigEndian, int32(key.MadeAt.Unix()))
+	binary.Write(message, binary.BigEndian, int32(key.ExpiresAt.Unix()))
 
 	binary.Write(message, binary.BigEndian, key.SecretVersion)
 	binary.Write(message, binary.BigEndian, key.UserID)
 	binary.Write(message, binary.BigEndian, key.Flags)
-	secret, err := ks.getSecret(key)
-	if err != nil {
-		return "", err
+
+	secret := ks.GetSecret(key)
+	if secret == nil {
+		return "", ErrNoSecret
 	}
 	mac := hmac.New(sha256.New, secret)
 	mac.Write(message.Bytes())
+
 	signature := mac.Sum(nil)[:16]
-	finalMessage := append(signature, message.Bytes()...)
-	return base58.Encode(finalMessage), nil
+
+	return base58.Encode(append(signature, message.Bytes()...)), nil
 }

@@ -7,7 +7,7 @@ import (
 
 //Common errors
 var (
-	ErrNoSecret   = errors.New("No secret was found for the secret version.")
+	ErrNoSecret   = errors.New("No secret was found for the key.")
 	ErrSymKeySize = fmt.Errorf("Key is not %v bytes long.", symKeyDigestSize)
 	ErrBadSecret  = errors.New("Secret is incorrect")
 	ErrInvalid    = errors.New("Key is expired or invalid.")
@@ -15,7 +15,7 @@ var (
 
 //Asymmetric key errors
 var (
-	ErrNoAsymKey       = errors.New("No asym key was found for that SecretVersion")
+	ErrNoPubKey        = errors.New("No public key was found for the key")
 	ErrNotECPublicKey  = errors.New("Not elliptic curve public key")
 	ErrAsymMessageSize = errors.New("Message portion not 20 bytes")
 	ErrBadSignature    = errors.New("Bad signature or message.")

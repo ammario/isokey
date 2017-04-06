@@ -13,22 +13,27 @@ import (
 	"github.com/jbenet/go-base58"
 )
 
+var _ = Verifier(new(AsymKeyVerifier))
+
 //AsymKeyVerifier verifies ECDSA signed API keys
 type AsymKeyVerifier struct {
-	//PublicKey is used if GetPublicKey and KeyMap is nil
-	PublicKey *ecdsa.PublicKey
-
-	//PublicKeyMap maps secret versions to secrets
-	PublicKeyMap map[uint32]*ecdsa.PublicKey
-
-	//GetPublicKey allows you to dynamically use secrets.
-	//Returning nil indicates that no secret was found for the version
+	//GetPublicKey allows you to dynamically use public keys based on the contents of a key.
+	//Returning nil indicates that no pubkey was found for key
 	GetPublicKey func(key *Key) *ecdsa.PublicKey
 
 	//CustomInvalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
 	//CustomInvalidate is ran after the key's signature has been validated.
 	//This is useful to deal with cases revolving compromised users.
 	CustomInvalidate func(*Key) bool
+}
+
+//NewAsymKeyVerifier returns an instantiated AsymKeyVerifier which always uses pubkey
+func NewAsymKeyVerifier(pubkey *ecdsa.PublicKey) *AsymKeyVerifier {
+	return &AsymKeyVerifier{
+		GetPublicKey: func(key *Key) *ecdsa.PublicKey {
+			return pubkey
+		},
+	}
 }
 
 //LoadPublicKey loads an ASN.1 ECDSA public key from a file.
@@ -60,26 +65,8 @@ func (kv *AsymKeyVerifier) Invalidate(key *Key) bool {
 	return kv.CustomInvalidate(key)
 }
 
-func (kv *AsymKeyVerifier) getPublicKey(key *Key) (publicKey *ecdsa.PublicKey, err error) {
-	var ok bool
-	if kv.GetPublicKey != nil {
-		publicKey = kv.GetPublicKey(key)
-	} else if kv.PublicKeyMap != nil {
-		publicKey, ok = kv.PublicKeyMap[key.SecretVersion]
-		if !ok {
-			return publicKey, ErrNoAsymKey
-		}
-	} else {
-		publicKey = kv.PublicKey
-	}
-
-	if publicKey == nil {
-		return publicKey, ErrNoAsymKey
-	}
-	return
-}
-
-//Verify verifies and parses a key
+//Verify verifies and parses a key.
+//It returns an error if the key is invalid.
 func (kv *AsymKeyVerifier) Verify(digest string) (key *Key, err error) {
 	key = &Key{}
 	rawDigest := base58.Decode(digest)
@@ -89,6 +76,7 @@ func (kv *AsymKeyVerifier) Verify(digest string) (key *Key, err error) {
 	if err != nil {
 		return
 	}
+
 	r := make([]byte, rLen)
 	buf.Read(r)
 
@@ -105,10 +93,10 @@ func (kv *AsymKeyVerifier) Verify(digest string) (key *Key, err error) {
 
 	key = unpack(buf.Bytes())
 
-	pubKey, err := kv.getPublicKey(key)
+	pubKey := kv.GetPublicKey(key)
 
-	if err != nil {
-		return nil, err
+	if pubKey == nil {
+		return nil, ErrNoPubKey
 	}
 
 	//fmt.Printf("r %x s %x buf %x pkXY %s %s\n", r, s, buf.Bytes(), pubKey.X, pubKey.Y)

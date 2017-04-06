@@ -1,5 +1,3 @@
-//Package isokey allows you to make and verify API keys without a database connection via HMAC signatures.
-//The keys are scalable and persistent. All information is stored in the key, and with the client.
 package isokey
 
 import (
@@ -17,17 +15,22 @@ import (
 	"github.com/jbenet/go-base58"
 )
 
+var _ = Signer(new(AsymKeySigner))
+
 //AsymKeySigner facilitates the creation ECDSA API keys
 type AsymKeySigner struct {
-	//PrivateKey is used if GetPrivateKey and KeyMap is nil
-	PrivateKey *ecdsa.PrivateKey
-
-	//PrivateKeyMap maps secret versions to secrets
-	PrivateKeyMap map[uint32]*ecdsa.PrivateKey
-
 	//GetPrivateKey allows you to dynamically use secrets.
-	//Returning nil indicates that no secret was found for the version
+	//Returning nil indicates that no secret was found for the key
 	GetPrivateKey func(key *Key) *ecdsa.PrivateKey
+}
+
+//NewAsymKeySigner returns an instantiated asymkeysigner which always uses privkey
+func NewAsymKeySigner(privkey *ecdsa.PrivateKey) *AsymKeySigner {
+	return &AsymKeySigner{
+		GetPrivateKey: func(key *Key) *ecdsa.PrivateKey {
+			return privkey
+		},
+	}
 }
 
 //LoadPrivateKey loads an ASN.1 ECDSA private key from a file.
@@ -36,52 +39,33 @@ func LoadPrivateKey(filename string) (privKey *ecdsa.PrivateKey, err error) {
 	if err != nil {
 		return nil, err
 	}
-	privKey, err = x509.ParseECPrivateKey(byt)
-	return
+	return x509.ParseECPrivateKey(byt)
 }
 
-func (ks *AsymKeySigner) getPrivateKey(key *Key) (privKey *ecdsa.PrivateKey, err error) {
-	var ok bool
-	if ks.GetPrivateKey != nil {
-		privKey = ks.GetPrivateKey(key)
-	} else if ks.PrivateKeyMap != nil {
-		privKey, ok = ks.PrivateKeyMap[key.SecretVersion]
-		if !ok {
-			return privKey, ErrNoAsymKey
-		}
-	} else {
-		privKey = ks.PrivateKey
-	}
-
-	if privKey == nil {
-		return privKey, ErrNoAsymKey
-	}
-	return
-}
-
-//Digest signs the API key and digests it into it's base58 form.
-//An error will only be returned if the corresponding key cannot be found from SecretVersion.
+//Sign signs the API key and provides it's base58 digest.
+//An error will be returned if the corresponding private key cannot be located.
 //if key.Made is zero it is set to the current time.
-func (ks *AsymKeySigner) Digest(key *Key) (digest string, err error) {
+func (ks *AsymKeySigner) Sign(key *Key) (digest string, err error) {
 	message := &bytes.Buffer{}
 
-	if key.Made.IsZero() {
-		key.Made = time.Now()
+	if key.MadeAt.IsZero() {
+		key.MadeAt = time.Now()
 	}
 
-	binary.Write(message, binary.BigEndian, uint32(key.Made.Unix()))
-	binary.Write(message, binary.BigEndian, uint32(key.Expires.Unix()))
+	binary.Write(message, binary.BigEndian, uint32(key.MadeAt.Unix()))
+	binary.Write(message, binary.BigEndian, uint32(key.ExpiresAt.Unix()))
 	binary.Write(message, binary.BigEndian, key.SecretVersion)
 	binary.Write(message, binary.BigEndian, key.UserID)
 	binary.Write(message, binary.BigEndian, key.Flags)
 
-	privKey, err := ks.getPrivateKey(key)
+	privKey := ks.GetPrivateKey(key)
 
-	if err != nil {
-		return "", err
+	if privKey == nil {
+		return "", ErrNoSecret
 	}
 
 	checksum := sha256.Sum256(message.Bytes())
+
 	signhash := checksum[:16]
 
 	r, s, err := ecdsa.Sign(rand.Reader, privKey, signhash)
