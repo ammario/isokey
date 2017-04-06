@@ -1,10 +1,8 @@
-//Package isokey allows you to make and verify API keys without a database connection via HMAC signatures.
-//The keys are scalable and persistent. All information need to verify the key is stored within the key.
 package isokey
 
 import "time"
 
-//Key is a self-contained algorithm agnostic API key
+//Key is a self-contained service agnostic API key
 type Key struct {
 	MadeAt        time.Time
 	ExpiresAt     time.Time

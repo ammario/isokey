@@ -1,5 +1,3 @@
-//Package isokey allows you to make and verify API keys without a database connection via HMAC signatures.
-//The keys are scalable and persistent. All information is stored in the key, and with the client.
 package isokey
 
 import (
