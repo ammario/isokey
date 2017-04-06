@@ -1,60 +1,52 @@
 # Isokey
 
-Isokey allows you to make and verify self-contained API keys without a database via HMAC signatures.
+Isokey allows you to make and verify self-contained API keys without a database via HMAC/ECDSA signatures.
 
 ## Features
-- Important information such as userID, key expire time, and flags are stored within
+- Important information such as userID, key expire time, and flags are authenticated and stored within
 the key.
-- Use mutliple secrets simultaneously
+- Use mutliple secrets
 - Invalidate secrets and compromised keys
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 ## Table Of Contents
 
-- [Install](#install)
 - [Symmetric Keys](#symmetric-keys)
   - [Make a key service](#make-a-key-service)
-  - [Make key digest](#make-key-digest)
+  - [Sign a new key](#sign-a-new-key)
   - [Verify key](#verify-key)
   - [Using multiple secrets](#using-multiple-secrets)
   - [Digest Structure](#digest-structure)
 - [Asymmetric Keys](#asymmetric-keys)
   - [Make a key pair](#make-a-key-pair)
-  - [Make key digest](#make-key-digest-1)
+  - [Make key digest](#make-key-digest)
   - [Verify key](#verify-key-1)
-  - [Using multiple keys](#using-multiple-keys)
   - [Digest Structure](#digest-structure-1)
 - [Invalidating keys](#invalidating-keys)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Install
-Always use gopkg to install, the repository may be in a broken midway state.
-
-`go get gopkg.in/ammario/isokey.v2`
-
 # Symmetric Keys
 
 ## Make a key service
 ```go
-    ks := SymKeyService{
-		Secret: []byte("super_secure111"),
-	}
+    ks := NewSymKeyService([]byte("super_secure111"))
 ```
 
-##  Make key digest
+##  Sign a new key
 ```go
 	key := &Key{
 		UserID:  1,
 		Expires: time.Now().AddDate(0, 1, 0),
 	}
 
-	digest, err := ks.Digest(key)
+	digest, err := ks.Sign(key)
 
 	if err != nil {
-		log.Fatalf("Error making digest: %v", err)
+		log.Fatalf("Error signing key: %v", err)
 	}
+
 	fmt.Printf("Digest is %v\n", digest)
 ```
 
@@ -64,27 +56,21 @@ Always use gopkg to install, the repository may be in a broken midway state.
     key, err = ks.Verify(digest)
 
 	if err != nil {
-		log.Fatalf("Error reading digest: %v", err)
+		log.Fatalf("Error verifying/reading digest: %v", err)
 	}
+
     //Key authenticated
 	fmt.Printf("Key: %+v\n", key)
 ```
 
 ## Using multiple secrets
-The SecretVersion is in included in each key to enable
-implementors to use multiple secrets.
+The SecretVersion field is in included in the key object to enable
+implementors to easily use multiple secrets.
 
-Use a map
-```go
-    ks.SecretMap = map[uint32][]byte{
-        1: []byte("sec1"),
-        2: []byte("sec2"),
-    }
-```
+A secret can be decided based on any feature of a key.
 
-Alternatively get full control with a function
 ```go
-    ks.GetSecret = function(key *Key)(secret []byte){
+    ks.GetSecret = function(key *Key) (secret []byte){
         if key.SecretVersion == 1 {
             return []byte("sec1") 
         }
@@ -109,8 +95,7 @@ All binary values are big endian.
 Digests are encoded with Bitcoin's base58 alphabet.
 
 It may seem intuitive to put the signature at the end of the digest. It's located
-at the beginning as it makes eyeballing different keys more easy due to
-the avalanche effect.
+at the beginning as it makes eyeballing different keys easy.
 
 # Asymmetric Keys
 
@@ -127,16 +112,14 @@ Make your public key
 ```go
     privKey, _ = isokey.LoadPrivateKey("priv.key")
 
-    ks := AsymKeySigner{
-		PrivateKey: privKey,
-	}
+    ks := NewAsymKeySigner(privKey)
 
     key := &Key{
         User: 1,
         Expires: time.Now().Add(time.Hour)
     }
 
-    digest, _ := ks.Digest(key)
+    digest, _ := ks.Sign(key)
 
     fmt.Printf("Digest: %v", digest)
 ```
@@ -145,21 +128,16 @@ Make your public key
 ```go
 	pubKey, _ = isokey.LoadPublicKey("pub.key")
 
-	kv := AsymKeyVerifier{
-        PublicKey: pubKey,
+	kv := NewAsymKeyVerifier(pubKey)
+
+    key, _ := kv.Verify(digest)
+    if err != nil {
+        log.Fatalf("Failed to verify key: %v", err)
     }
 
-    key, err := kv.Verify(digest)
-    if err != nil {
-        log.Fatalf("Error verifying key: %v", err)
-    }
-	fmt.Printf("Key verified %v\n", key)
+	fmt.Printf("Key verified %+v\n", key)
 
 ```
-
-## Using multiple keys
-Similar to symmetric keys, you can use multiple public
-or private keys. Refer to the godoc for specific usage.
 
 
 ## Digest Structure
@@ -182,20 +160,16 @@ Digests are encoded with Bitcoin's base58 alphabet.
 
 # Invalidating keys
 
-Custom invalidation can be useful if you'd like to support cases where the client
-has been compromised.
+Keys with bad signatures or are expired always fail to validate.
 
-You can invalidate keys like so
+You can add custom invalidation logic via the `Invalidator` field of verifiers.
+
 ```go
-ks.CustomInvalidate = function(key *isokey.Key) bool {
+verifier.Invalidator = function(key *isokey.Key) bool {
+    //reject keys made before some time
     if key.UserID == 10 && key.Made.Before(time.Date(2015, time.November, 10, 23, 0, 0, 0, time.UTC)) {
-        return true
-    }
-    //Make sure to handle expired keys when overriding
-    if key.Expires.Before(time.Now()) {
         return true
     }
     return false
 }
 ```
-**Remember when overriding Invalidate to handle expired keys**

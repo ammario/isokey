@@ -23,9 +23,9 @@ type SymKeyService struct {
 	//Returning nil indicates that no secret was found for the key
 	GetSecret func(key *Key) (secret []byte)
 
-	//CustomInvalidate allows you to dynamically invalidate a key.
-	//CustomInvalidate is ran after the key's signature has been validated.
-	CustomInvalidate func(*Key) bool
+	//Invalidator allows you to dynamically invalidate a key.
+	//Invalidator is ran after the key's signature has been validated.
+	Invalidator func(*Key) bool
 }
 
 //NewSymKeyService returns a new sym key service using a single key
@@ -37,12 +37,12 @@ func NewSymKeyService(secret []byte) *SymKeyService {
 	}
 }
 
-//Invalid returns true if the key is invalid
+//Invalid returns true if the key is invalid.
 func (ks *SymKeyService) Invalid(key *Key) bool {
-	if ks.CustomInvalidate == nil {
-		return defaultInvalidate(key)
+	if ks.Invalidator == nil {
+		return key.ExpiresAt.Before(time.Now())
 	}
-	return ks.CustomInvalidate(key)
+	return key.ExpiresAt.Before(time.Now()) || ks.Invalidator(key)
 }
 
 //Verify securely validates a digest.
@@ -63,7 +63,7 @@ func (ks *SymKeyService) Verify(digest string) (*Key, error) {
 	}
 
 	if !checkMAC(rawDigest[16:], signature, secret) {
-		return key, ErrBadSecret
+		return key, ErrBadSignature
 	}
 
 	if ks.Invalid(key) {

@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"io/ioutil"
+	"time"
 
 	"math/big"
 
@@ -21,10 +22,10 @@ type AsymKeyVerifier struct {
 	//Returning nil indicates that no pubkey was found for key
 	GetPublicKey func(key *Key) *ecdsa.PublicKey
 
-	//CustomInvalidate allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
-	//CustomInvalidate is ran after the key's signature has been validated.
+	//Invalidator allows you to invalidate certain keys based off the Key's parameters (e.g when it was made.)
+	//Invalidator is ran after the key's signature has been validated.
 	//This is useful to deal with cases revolving compromised users.
-	CustomInvalidate func(*Key) bool
+	Invalidator func(*Key) bool
 }
 
 //NewAsymKeyVerifier returns an instantiated AsymKeyVerifier which always uses pubkey
@@ -59,10 +60,10 @@ func LoadPublicKey(filename string) (publicKey *ecdsa.PublicKey, err error) {
 
 //Invalidate invalidates a key
 func (kv *AsymKeyVerifier) Invalidate(key *Key) bool {
-	if kv.CustomInvalidate == nil {
-		return defaultInvalidate(key)
+	if kv.Invalidator == nil {
+		return key.ExpiresAt.Before(time.Now())
 	}
-	return kv.CustomInvalidate(key)
+	return key.ExpiresAt.Before(time.Now()) || kv.Invalidator(key)
 }
 
 //Verify verifies and parses a key.

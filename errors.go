@@ -9,7 +9,6 @@ import (
 var (
 	ErrNoSecret   = errors.New("No secret was found for the key.")
 	ErrSymKeySize = fmt.Errorf("Key is not %v bytes long.", symKeyDigestSize)
-	ErrBadSecret  = errors.New("Secret is incorrect")
 	ErrInvalid    = errors.New("Key is expired or invalid.")
 )
 
