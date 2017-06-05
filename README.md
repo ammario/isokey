@@ -160,13 +160,13 @@ Digests are encoded with Bitcoin's base58 alphabet.
 
 # Invalidating keys
 
-Keys with bad signatures or are expired always fail to validate.
+Expired keys always fail to validate.
 
 You can add custom invalidation logic via the `Invalidator` field of verifiers.
 
 ```go
 verifier.Invalidator = function(key *isokey.Key) bool {
-    //reject keys made before some time
+    // reject keys made before some time
     if key.UserID == 10 && key.Made.Before(time.Date(2015, time.November, 10, 23, 0, 0, 0, time.UTC)) {
         return true
     }
