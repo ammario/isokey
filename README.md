@@ -31,36 +31,34 @@ the key.
 
 ## Make a key service
 ```go
-    ks := NewSymKeyService([]byte("super_secure111"))
+ks := NewSymKeyService([]byte("super_secure111"))
 ```
 
 ##  Sign a new key
 ```go
-	key := &Key{
-		UserID:  1,
-		Expires: time.Now().AddDate(0, 1, 0),
-	}
+key := &Key{
+	UserID:  1,
+	Expires: time.Now().AddDate(0, 1, 0),
+}
 
-	digest, err := ks.Sign(key)
-
-	if err != nil {
-		log.Fatalf("Error signing key: %v", err)
-	}
-
-	fmt.Printf("Digest is %v\n", digest)
+digest, err := ks.Sign(key)
+if err != nil {
+	log.Fatalf("Failed to sign key: %v", err)
+}
+fmt.Printf("Digest is %v\n", digest)
 ```
 
 ## Verify key
 
 ```go
-    key, err = ks.Verify(digest)
+key, err = ks.Verify(digest)
 
-	if err != nil {
-		log.Fatalf("Error verifying/reading digest: %v", err)
-	}
+if err != nil {
+	log.Fatalf("Failed to verify digest: %v", err)
+}
 
-    //Key authenticated
-	fmt.Printf("Key: %+v\n", key)
+// Key authenticated
+fmt.Printf("Key: %+v\n", key)
 ```
 
 ## Using multiple secrets
@@ -70,12 +68,12 @@ implementors to easily use multiple secrets.
 A secret can be decided based on any feature of a key.
 
 ```go
-    ks.GetSecret = function(key *Key) (secret []byte){
-        if key.SecretVersion == 1 {
-            return []byte("sec1") 
-        }
-        return nil
-    }
+ks.GetSecret = function(key *Key) (secret []byte){
+	if key.SecretVersion == 1 {
+		return []byte("sec1") 
+	}
+	return nil
+}
 ```
 
 
@@ -110,32 +108,35 @@ Make your public key
 
 ## Make key digest
 ```go
-    privKey, _ = isokey.LoadPrivateKey("priv.key")
+privKey, _ = isokey.LoadPrivateKey("priv.key")
 
-    ks := NewAsymKeySigner(privKey)
+ks := NewAsymKeySigner(privKey)
 
-    key := &Key{
-        User: 1,
-        Expires: time.Now().Add(time.Hour)
-    }
+key := &Key{
+    User: 1,
+    Expires: time.Now().Add(time.Hour)
+}
 
-    digest, _ := ks.Sign(key)
+digest, _ := ks.Sign(key)
 
-    fmt.Printf("Digest: %v", digest)
+fmt.Printf("Digest: %v", digest)
 ```
 
 ##  Verify key
 ```go
-	pubKey, _ = isokey.LoadPublicKey("pub.key")
+pubKey, err := isokey.LoadPublicKey("pub.key")
+if err != nil {
+	log.Fatalf("Failed to load pubkey: %v", err)
+}
 
-	kv := NewAsymKeyVerifier(pubKey)
+kv := NewAsymKeyVerifier(pubKey)
 
-    key, _ := kv.Verify(digest)
-    if err != nil {
-        log.Fatalf("Failed to verify key: %v", err)
-    }
+key, err := kv.Verify(digest)
+if err != nil {
+	log.Fatalf("Failed to verify key: %v", err)
+}
 
-	fmt.Printf("Key verified %+v\n", key)
+fmt.Printf("Key verified %+v\n", key)
 
 ```
 
